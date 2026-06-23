@@ -1,12 +1,17 @@
 """
-InvOpt API — Version 1
+InvOpt API — Version 1 (Extended)
 Entry point. Routes delegate all computation to formulas.py.
 """
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, field_validator
-from formulas import calculate_eoq, calculate_rop
+from pydantic import BaseModel, Field
+
+from formulas import (
+    calculate_eoq,
+    calculate_rop,
+    calculate_safety_stock
+)
 
 app = FastAPI(
     title="InvOpt API",
@@ -14,6 +19,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# ── CORS ───────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -22,40 +28,66 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ── Request schemas ───────────────────────────────────────────────────────────
+# ── REQUEST MODELS ─────────────────────────────────────────────────────
 
 class EOQRequest(BaseModel):
-    demand: float = Field(..., gt=0, description="Annual demand (units/year)")
-    ordering_cost: float = Field(..., gt=0, description="Fixed ordering cost ($/order)")
-    holding_cost: float = Field(..., gt=0, description="Holding cost ($/unit/year)")
+    demand: float = Field(..., gt=0)
+    ordering_cost: float = Field(..., gt=0)
+    holding_cost: float = Field(..., gt=0)
 
 
 class ROPRequest(BaseModel):
-    daily_demand: float = Field(..., gt=0, description="Average daily demand (units/day)")
-    lead_time: float = Field(..., gt=0, description="Replenishment lead time (days)")
+    daily_demand: float = Field(..., gt=0)
+    lead_time: float = Field(..., gt=0)
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+class SafetyStockRequest(BaseModel):
+    demand_std_dev: float = Field(..., gt=0)
+    lead_time: float = Field(..., gt=0)
+    service_level: float = Field(..., gt=0, lt=1)
+    daily_demand: float = Field(..., gt=0)
+
+# ── ROUTES ─────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "1.0.0"}
+    return {
+        "status": "ok",
+        "version": "1.0.0"
+    }
 
-
+# ── EOQ ────────────────────────────────────────────────────────────────
 @app.post("/eoq")
 def eoq(req: EOQRequest):
     try:
-        return calculate_eoq(req.demand, req.ordering_cost, req.holding_cost)
+        return calculate_eoq(
+            req.demand,
+            req.ordering_cost,
+            req.holding_cost
+        )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-
+# ── ROP ────────────────────────────────────────────────────────────────
 @app.post("/rop")
 def rop(req: ROPRequest):
     try:
-        return calculate_rop(req.daily_demand, req.lead_time)
+        return calculate_rop(
+            req.daily_demand,
+            req.lead_time
+        )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-
+# ── SAFETY STOCK ───────────────────────────────────────────────────────
+@app.post("/safety-stock")
+def safety_stock(req: SafetyStockRequest):
+    try:
+        return calculate_safety_stock(
+            req.demand_std_dev,
+            req.lead_time,
+            req.service_level,
+            req.daily_demand
+        )
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))

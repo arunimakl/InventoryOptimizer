@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { calculateEOQ } from "./api";
 
-const INITIAL = { demand: "", ordering_cost: "", holding_cost: "" };
+const INITIAL = {
+  demand: "",
+  ordering_cost: "",
+  holding_cost: "",
+};
 
 export default function EOQForm() {
   const [fields, setFields] = useState(INITIAL);
@@ -10,7 +14,10 @@ export default function EOQForm() {
   const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
-    setFields((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFields((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
     setError("");
   }
 
@@ -18,18 +25,25 @@ export default function EOQForm() {
     e.preventDefault();
     setError("");
     setResult(null);
+
+    const payload = {
+      demand: Number(fields.demand),
+      ordering_cost: Number(fields.ordering_cost),
+      holding_cost: Number(fields.holding_cost),
+    };
+
+    if (!payload.demand || !payload.ordering_cost || !payload.holding_cost) {
+      setError("Please enter valid positive numbers");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const payload = {
-        demand: parseFloat(fields.demand),
-        ordering_cost: parseFloat(fields.ordering_cost),
-        holding_cost: parseFloat(fields.holding_cost),
-      };
       const data = await calculateEOQ(payload);
       setResult(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -40,101 +54,94 @@ export default function EOQForm() {
       <div className="module-header">
         <span className="module-tag">EOQ</span>
         <h2 className="module-title">Economic Order Quantity</h2>
-        <p className="module-formula">
-          Q* = √( 2DS / H )
-        </p>
+        <p className="module-formula">Q* = √( 2DS / H )</p>
       </div>
 
       <form className="calc-form" onSubmit={handleSubmit}>
         <div className="field-group">
-          <label htmlFor="demand">
-            Annual Demand <span className="field-unit">(D) — units/year</span>
-          </label>
+          <label>Annual Demand (D)</label>
           <input
-            id="demand"
             name="demand"
             type="number"
-            min="0.01"
-            step="any"
-            required
-            placeholder="e.g. 10000"
             value={fields.demand}
             onChange={handleChange}
+            placeholder="e.g. 10000"
           />
         </div>
 
         <div className="field-group">
-          <label htmlFor="ordering_cost">
-            Ordering Cost <span className="field-unit">(S) — ₹ or $ per order</span>
-          </label>
+          <label>Ordering Cost (S)</label>
           <input
-            id="ordering_cost"
             name="ordering_cost"
             type="number"
-            min="0.01"
-            step="any"
-            required
-            placeholder="e.g. 200"
             value={fields.ordering_cost}
             onChange={handleChange}
+            placeholder="e.g. 200"
           />
         </div>
 
         <div className="field-group">
-          <label htmlFor="holding_cost">
-            Holding Cost <span className="field-unit">(H) — per unit/year</span>
-          </label>
+          <label>Holding Cost (H)</label>
           <input
-            id="holding_cost"
             name="holding_cost"
             type="number"
-            min="0.01"
-            step="any"
-            required
-            placeholder="e.g. 5"
             value={fields.holding_cost}
             onChange={handleChange}
+            placeholder="e.g. 5"
           />
         </div>
 
         {error && <p className="error-msg">{error}</p>}
 
         <button className="calc-btn" type="submit" disabled={loading}>
-          {loading ? "Calculating…" : "Calculate EOQ"}
+          {loading ? "Calculating..." : "Calculate EOQ"}
         </button>
       </form>
 
-      {result && (
-        <div className="results-panel">
-          <ResultRow
-            label="Optimal Order Qty (Q*)"
-            value={result.eoq.toLocaleString()}
-            unit="units"
-            highlight
-          />
-          <ResultRow
-            label="Orders per Year"
-            value={result.orders_per_year.toLocaleString()}
-            unit="orders"
-          />
-          <ResultRow
-            label="Time Between Orders"
-            value={(result.time_between_orders * 365).toFixed(1)}
-            unit="days"
-          />
-        </div>
-      )}
+      {result && (() => {
+        // ── CONSISTENT FORMATTING ──
+        const eoq = Math.round(result.eoq);
+        const orders = result.orders_per_year.toFixed(1);
+
+        const days = Math.round(result.time_between_orders * 365);
+        const weeks = Math.round(days / 7);
+
+        return (
+          <div className="results-panel">
+            <ResultRow
+              label="EOQ"
+              value={eoq}
+              unit="units"
+              highlight
+            />
+
+            <ResultRow
+              label="Orders per Year"
+              value={orders}
+              unit=""
+            />
+
+            <ResultRow
+              label="Time Between Orders"
+              value={`${days} days (~${weeks} weeks)`}
+              unit=""
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
 
+/* ───────────────────────── Result Component ───────────────────────── */
+
 function ResultRow({ label, value, unit, highlight }) {
   return (
-    <div className={`result-row${highlight ? " result-row--highlight" : ""}`}>
-      <span className="result-label">{label}</span>
-      <span className="result-value">
-        {value} <span className="result-unit">{unit}</span>
-      </span>
+    <div className={`result-row ${highlight ? "highlight" : ""}`}>
+      <span>{label}</span>
+      <strong>
+        {value} {unit}
+      </strong>
     </div>
   );
 }

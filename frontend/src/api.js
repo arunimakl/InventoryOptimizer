@@ -1,40 +1,60 @@
 /**
- * InvOpt API Client — Version 1
- * Base URL is read from env so deployments never need source changes.
- * Vite proxy handles dev routing; set VITE_API_BASE for production.
+ * InvOpt API Client — Stable Version
+ * Handles EOQ, ROP, Safety Stock safely with unified error handling
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE ?? "";
 
+/**
+ * Safe POST wrapper (prevents unknown errors & crashes)
+ */
 async function post(endpoint, body) {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(err.detail ?? `HTTP ${res.status}`);
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message =
+        data?.detail ||
+        data?.message ||
+        `Request failed with status ${res.status}`;
+
+      throw new Error(message);
+    }
+
+    return data;
+  } catch (err) {
+    throw new Error(err.message || "Network error");
   }
-
-  return res.json();
 }
 
-/**
- * @param {{ demand: number, ordering_cost: number, holding_cost: number }} params
- * @returns {Promise<{ eoq: number, orders_per_year: number, time_between_orders: number }>}
- */
+/* ───────────────────────────── EOQ ───────────────────────────── */
+
 export function calculateEOQ(params) {
   return post("/eoq", params);
 }
 
-/**
- * @param {{ daily_demand: number, lead_time: number }} params
- * @returns {Promise<{ rop: number }>}
- */
+/* ───────────────────────────── ROP ───────────────────────────── */
+
 export function calculateROP(params) {
   return post("/rop", params);
 }
 
-// Future: calculateSafetyStock, runABCAnalysis, compareScenarios
+/* ─────────────────────── SAFETY STOCK (V2 READY) ─────────────────────── */
+
+export function calculateSafetyStock(params) {
+  return post("/safety-stock", params);
+}
+
+/* ─────────────────────── FUTURE MODULES (STUBS) ─────────────────────── */
+
+// export function runABCAnalysis(params) {
+//   return post("/abc", params);
+// }
