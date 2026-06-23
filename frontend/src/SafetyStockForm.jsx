@@ -2,10 +2,9 @@ import { useState } from "react";
 import { calculateSafetyStock } from "./api";
 
 const INITIAL = {
-  demand_std_dev: "",
-  lead_time: "",
+  mean_demand_lead_time: "",
+  std_dev_lead_time: "",
   service_level: "",
-  daily_demand: "",
 };
 
 export default function SafetyStockForm() {
@@ -28,18 +27,16 @@ export default function SafetyStockForm() {
     setResult(null);
 
     const payload = {
-      demand_std_dev: Number(fields.demand_std_dev),
-      lead_time: Number(fields.lead_time),
+      mean_demand_lead_time: Number(fields.mean_demand_lead_time),
+      std_dev_lead_time: Number(fields.std_dev_lead_time),
       service_level: Number(fields.service_level),
-      daily_demand: Number(fields.daily_demand),
     };
 
-    // ── VALIDATION (CRASH PREVENTION) ──
+    // ── VALIDATION ──
     if (
-      !payload.demand_std_dev ||
-      !payload.lead_time ||
-      !payload.service_level ||
-      !payload.daily_demand
+      !payload.mean_demand_lead_time ||
+      !payload.std_dev_lead_time ||
+      !payload.service_level
     ) {
       setError("Please enter valid positive numbers");
       return;
@@ -54,6 +51,7 @@ export default function SafetyStockForm() {
 
     try {
       const data = await calculateSafetyStock(payload);
+      console.log("API RESPONSE:", data); // 👈 ADD THIS HERE
       setResult(data);
     } catch (err) {
       setError(err.message || "Calculation failed");
@@ -67,29 +65,31 @@ export default function SafetyStockForm() {
       <div className="module-header">
         <span className="module-tag">SS</span>
         <h2 className="module-title">Safety Stock Calculator</h2>
-        <p className="module-formula">SS = Z × σ × √L</p>
+        <p className="module-formula">
+          SS = Z × σL | ROP = μL + SS
+        </p>
       </div>
 
       <form className="calc-form" onSubmit={handleSubmit}>
         <div className="field-group">
-          <label>Daily Demand Std Dev</label>
+          <label>Mean Demand (μL)</label>
           <input
-            name="demand_std_dev"
+            name="mean_demand_lead_time"
             type="number"
-            value={fields.demand_std_dev}
+            value={fields.mean_demand_lead_time}
             onChange={handleChange}
-            placeholder="e.g. 12"
+            placeholder="e.g. 500"
           />
         </div>
 
         <div className="field-group">
-          <label>Lead Time (days)</label>
+          <label>Std Dev of Demand (σL)</label>
           <input
-            name="lead_time"
+            name="std_dev_lead_time"
             type="number"
-            value={fields.lead_time}
+            value={fields.std_dev_lead_time}
             onChange={handleChange}
-            placeholder="e.g. 5"
+            placeholder="e.g. 40"
           />
         </div>
 
@@ -105,17 +105,6 @@ export default function SafetyStockForm() {
           />
         </div>
 
-        <div className="field-group">
-          <label>Daily Demand</label>
-          <input
-            name="daily_demand"
-            type="number"
-            value={fields.daily_demand}
-            onChange={handleChange}
-            placeholder="e.g. 50"
-          />
-        </div>
-
         {error && <p className="error-msg">{error}</p>}
 
         <button className="calc-btn" type="submit" disabled={loading}>
@@ -126,21 +115,19 @@ export default function SafetyStockForm() {
       {result && (
         <div className="results-panel">
           <ResultRow label="Z Score" value={result.z_score} unit="" />
+
           <ResultRow
             label="Safety Stock"
             value={result.safety_stock}
             unit="units"
             highlight
           />
+
           <ResultRow
-            label="Base ROP"
-            value={result.base_rop}
+            label="Reorder Point (ROP)"
+            value={result.reorder_point}
             unit="units"
-          />
-          <ResultRow
-            label="Updated ROP"
-            value={result.updated_rop}
-            unit="units"
+            highlight
           />
         </div>
       )}

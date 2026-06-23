@@ -63,55 +63,43 @@ def calculate_rop(daily_demand: float, lead_time: float) -> dict:
 
 # ── Safety Stock + Updated ROP (Version 2) ───────────────────────────────────
 
+import math
+from scipy import stats
+
 def calculate_safety_stock(
-    demand_std_dev: float,
-    lead_time: float,
+    mean_demand_lead_time: float,
+    std_dev_lead_time: float,
     service_level: float,
-    daily_demand: float,
 ) -> dict:
     """
-    Safety Stock using the normal distribution model.
+    Safety Stock (Textbook Model)
 
-    SS = Z * σ_d * √L
-    Updated ROP = (d × L) + SS
+    SS = Z × σL
+    ROP = μL + SS
 
-    Parameters
-    ----------
-    demand_std_dev : Standard deviation of daily demand (σ_d) in units/day
-    lead_time      : Replenishment lead time (L) in days
-    service_level  : Desired service level as a decimal, e.g. 0.95 for 95%
-    daily_demand   : Average daily demand (d) in units/day
+    Parameters:
+    mean_demand_lead_time (μL)
+    std_dev_lead_time (σL)
+    service_level (probability between 0–1)
 
-    Returns
-    -------
-    dict with:
-        z_score        : Z-score corresponding to service level
-        safety_stock   : Safety stock quantity (units)
-        updated_rop    : New reorder point including safety stock (units)
-        base_rop       : Deterministic ROP without safety stock (units)
+    Returns:
+    dict with SS and ROP
     """
+
     if not (0 < service_level < 1):
-        raise ValueError("service_level must be between 0 and 1 (exclusive).")
+        raise ValueError("service_level must be between 0 and 1")
 
-    # simple z-table approximation (common values)
-    z_table = {
-        0.90: 1.28,
-        0.92: 1.41,
-        0.95: 1.65,
-        0.97: 1.88,
-        0.99: 2.33,
-    }
+    # Z from standard normal distribution
+    z = stats.norm.ppf(service_level)
 
-    z = z_table.get(round(service_level, 2), 1.65)
-    safety_stock = z * demand_std_dev * math.sqrt(lead_time)
-    base_rop = daily_demand * lead_time
-    updated_rop = base_rop + safety_stock
+    safety_stock = z * std_dev_lead_time
+    reorder_point = mean_demand_lead_time + safety_stock
 
     return {
-        "z_score": round(z, 4),
-        "safety_stock": round(safety_stock, 4),
-        "base_rop": round(base_rop, 4),
-        "updated_rop": round(updated_rop, 4),
+        "z_score": round(z, 2),
+        "safety_stock": round(safety_stock, 2),
+        "reorder_point": round(reorder_point, 2),
+        "mean_demand_lead_time": round(mean_demand_lead_time, 2)
     }
 
 
