@@ -106,40 +106,24 @@ def calculate_safety_stock(
 # ── ABC Analysis (Version 3) ─────────────────────────────────────────────────
 
 def abc_classify(items: list[dict]) -> dict:
-    """
-    ABC Inventory Classification (Pareto-based).
-
-    Each item must have 'name', 'annual_usage' (units/year), 'unit_cost'.
-    Annual value = annual_usage × unit_cost.
-
-    Thresholds (cumulative % of total value):
-        A: 0–70%
-        B: 70–90%
-        C: 90–100%
-
-    Parameters
-    ----------
-    items : list of dicts with keys: name, annual_usage, unit_cost
-
-    Returns
-    -------
-    dict with:
-        classified_items : list of items enriched with annual_value,
-                           cumulative_pct, and category (A/B/C)
-        summary          : count and value_pct per category
-        total_value      : sum of all annual values
-    """
     if not items:
         raise ValueError("Item list is empty.")
 
-    # Compute annual value and sort descending
     enriched = []
+
     for item in items:
-        annual_value = item["annual_usage"] * item["unit_cost"]
+        try:
+            usage = float(item["annual_usage"])
+            cost = float(item["unit_cost"])
+        except:
+            raise ValueError(f"Invalid numeric input in item: {item}")
+
+        annual_value = usage * cost
+
         enriched.append({
             "name": item["name"],
-            "annual_usage": item["annual_usage"],
-            "unit_cost": item["unit_cost"],
+            "annual_usage": usage,
+            "unit_cost": cost,
             "annual_value": round(annual_value, 4),
         })
 
@@ -148,11 +132,16 @@ def abc_classify(items: list[dict]) -> dict:
     total_value = sum(i["annual_value"] for i in enriched)
 
     cumulative = 0.0
-    summary = {"A": {"count": 0, "value": 0.0}, "B": {"count": 0, "value": 0.0}, "C": {"count": 0, "value": 0.0}}
+
+    summary = {
+        "A": {"count": 0, "value": 0.0},
+        "B": {"count": 0, "value": 0.0},
+        "C": {"count": 0, "value": 0.0},
+    }
 
     for item in enriched:
         cumulative += item["annual_value"]
-        pct = (cumulative / total_value) * 100
+        pct = (cumulative / total_value) * 100 if total_value else 0
 
         if pct <= 70:
             cat = "A"
@@ -163,20 +152,19 @@ def abc_classify(items: list[dict]) -> dict:
 
         item["cumulative_pct"] = round(pct, 2)
         item["category"] = cat
-        summary[cat]["count"] += 1
-        summary[cat]["value"] = round(summary[cat]["value"] + item["annual_value"], 4)
 
-    # Compute value % per category
+        summary[cat]["count"] += 1
+        summary[cat]["value"] += item["annual_value"]
+
     for cat in summary:
-        summary[cat]["value_pct"] = round((summary[cat]["value"] / total_value) * 100, 2)
+        summary[cat]["value_pct"] = round(
+            (summary[cat]["value"] / total_value) * 100, 2
+        ) if total_value else 0
+
+        summary[cat]["value"] = round(summary[cat]["value"], 4)
 
     return {
         "classified_items": enriched,
         "summary": summary,
         "total_value": round(total_value, 4),
     }
-
-
-# ── Future modules (stubs) ────────────────────────────────────────────────────
-# def newsvendor(demand_dist, cost_underage, cost_overage): ...
-# def compare_scenarios(scenarios: list[dict]): ...

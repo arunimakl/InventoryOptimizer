@@ -3,14 +3,17 @@ InvOpt API — Version 1 (Extended)
 Entry point. Routes delegate all computation to formulas.py.
 """
 
+from typing import List
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from formulas import (
+    abc_classify,
     calculate_eoq,
     calculate_rop,
-    calculate_safety_stock
+    calculate_safety_stock,
 )
 
 app = FastAPI(
@@ -89,3 +92,26 @@ def safety_stock(req: SafetyStockRequest):
     )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+# ── ABC ANALYSIS ────────────────────────────────────────────────────────────────
+class ABCItem(BaseModel):
+    name: str
+    annual_usage: float
+    unit_cost: float
+
+
+class ABCRequest(BaseModel):
+    items: List[ABCItem]
+
+
+@app.post("/abc")
+def abc(req: ABCRequest):
+    print("ABC REQUEST RECEIVED:", req)
+
+    data = [item.model_dump() for item in req.items]
+    print("PARSED DATA:", data)
+
+    result = abc_classify(data)
+    print("RESULT:", result)
+
+    return result
