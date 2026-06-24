@@ -64,10 +64,11 @@ def calculate_rop(daily_demand: float, lead_time: float) -> dict:
 # ── Safety Stock + Updated ROP (Version 2) ───────────────────────────────────
 
 import math
-from scipy import stats
+
 
 def calculate_safety_stock(
-    mean_demand_lead_time: float,
+    daily_demand: float,
+    lead_time: float,
     std_dev_lead_time: float,
     service_level: float,
 ) -> dict:
@@ -75,33 +76,54 @@ def calculate_safety_stock(
     Safety Stock (Textbook Model)
 
     SS = Z × σL
-    ROP = μL + SS
+    ROP = (d × L) + SS
 
     Parameters:
-    mean_demand_lead_time (μL)
+    daily_demand (d)
+    lead_time (L)
     std_dev_lead_time (σL)
-    service_level (probability between 0–1)
+    service_level (0–1)
 
     Returns:
-    dict with SS and ROP
+    dict with SS, ROP, Z
     """
 
     if not (0 < service_level < 1):
         raise ValueError("service_level must be between 0 and 1")
 
-    # Z from standard normal distribution
-    z = stats.norm.ppf(service_level)
+    # ---- Z-table (no scipy, stable version) ----
+    z_table = {
+        0.50: 0.00,
+        0.55: 0.13,
+        0.60: 0.25,
+        0.65: 0.39,
+        0.70: 0.52,
+        0.75: 0.67,
+        0.80: 0.84,
+        0.85: 1.04,
+        0.90: 1.28,
+        0.95: 1.64,
+        0.97: 1.88,
+        0.98: 2.05,
+        0.99: 2.33,
+    }
+
+    # closest match (safe fallback instead of crash)
+    closest_key = min(z_table.keys(), key=lambda k: abs(k - service_level))
+    z = z_table[closest_key]
 
     safety_stock = z * std_dev_lead_time
-    reorder_point = mean_demand_lead_time + safety_stock
+
+    base_rop = daily_demand * lead_time
+
+    reorder_point = base_rop + safety_stock
 
     return {
         "z_score": round(z, 2),
         "safety_stock": round(safety_stock, 2),
+        "base_rop": round(base_rop, 2),
         "reorder_point": round(reorder_point, 2),
-        "mean_demand_lead_time": round(mean_demand_lead_time, 2)
     }
-
 
 # ── ABC Analysis (Version 3) ─────────────────────────────────────────────────
 

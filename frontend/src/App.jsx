@@ -9,8 +9,7 @@ const MODULES = [
   { id: "rop", label: "ROP" },
   { id: "ss", label: "Safety Stock" },
   { id: "abc", label: "ABC Analysis" },
-  // Future:
-  // { id: "abc", label: "ABC Analysis" },
+  
 ];
 
 export default function App() {
@@ -55,7 +54,7 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className="app-footer">
-        InvOpt v1 · All calculations are stateless · No data is stored
+        
       </footer>
     </div>
   );

@@ -45,7 +45,8 @@ class ROPRequest(BaseModel):
 
 
 class SafetyStockRequest(BaseModel):
-    mean_demand_lead_time: float = Field(..., gt=0)
+    daily_demand: float = Field(..., gt=0)
+    lead_time: float = Field(..., gt=0)
     std_dev_lead_time: float = Field(..., gt=0)
     service_level: float = Field(..., gt=0, lt=1)
 
@@ -86,10 +87,12 @@ def rop(req: ROPRequest):
 def safety_stock(req: SafetyStockRequest):
     try:
         return calculate_safety_stock(
-        req.mean_demand_lead_time,
-        req.std_dev_lead_time,
-        req.service_level
-    )
+            req.daily_demand,
+            req.lead_time,
+            req.std_dev_lead_time,
+            req.service_level
+        )
+    
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 

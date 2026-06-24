@@ -52,7 +52,6 @@ export default function EOQForm() {
   return (
     <div className="module-card">
       <div className="module-header">
-        <span className="module-tag">EOQ</span>
         <h2 className="module-title">Economic Order Quantity</h2>
         <p className="module-formula">Q* = √( 2DS / H )</p>
       </div>

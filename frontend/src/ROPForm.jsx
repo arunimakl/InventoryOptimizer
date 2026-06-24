@@ -37,7 +37,7 @@ export default function ROPForm() {
   return (
     <div className="module-card">
       <div className="module-header">
-        <span className="module-tag">ROP</span>
+        
         <h2 className="module-title">Reorder Point</h2>
         <p className="module-formula">R = d × L</p>
       </div>

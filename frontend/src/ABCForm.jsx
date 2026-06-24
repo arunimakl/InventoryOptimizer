@@ -68,7 +68,7 @@ export default function ABCForm() {
 
       {/* HEADER */}
       <div className="module-header">
-        <span className="module-tag">ABC</span>
+        
         <h2 className="module-title">ABC Analysis</h2>
         <p className="module-formula">
           Annual Value = Usage × Unit Cost

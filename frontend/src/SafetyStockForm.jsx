@@ -2,10 +2,11 @@ import { useState } from "react";
 import { calculateSafetyStock } from "./api";
 
 const INITIAL = {
-  mean_demand_lead_time: "",
+  daily_demand: "",
+  lead_time: "",
   std_dev_lead_time: "",
   service_level: "",
-};
+}
 
 export default function SafetyStockForm() {
   const [fields, setFields] = useState(INITIAL);
@@ -27,14 +28,16 @@ export default function SafetyStockForm() {
     setResult(null);
 
     const payload = {
-      mean_demand_lead_time: Number(fields.mean_demand_lead_time),
+      daily_demand: Number(fields.daily_demand),
+      lead_time: Number(fields.lead_time),
       std_dev_lead_time: Number(fields.std_dev_lead_time),
       service_level: Number(fields.service_level),
     };
 
     // ── VALIDATION ──
     if (
-      !payload.mean_demand_lead_time ||
+      !payload.daily_demand ||
+      !payload.lead_time ||
       !payload.std_dev_lead_time ||
       !payload.service_level
     ) {
@@ -63,7 +66,7 @@ export default function SafetyStockForm() {
   return (
     <div className="module-card">
       <div className="module-header">
-        <span className="module-tag">SS</span>
+        
         <h2 className="module-title">Safety Stock Calculator</h2>
         <p className="module-formula">
           SS = Z × σL | ROP = μL + SS
@@ -72,13 +75,24 @@ export default function SafetyStockForm() {
 
       <form className="calc-form" onSubmit={handleSubmit}>
         <div className="field-group">
-          <label>Mean Demand (μL)</label>
+          <label>Daily Demand</label>
           <input
-            name="mean_demand_lead_time"
+            name="daily_demand"
             type="number"
-            value={fields.mean_demand_lead_time}
+            value={fields.daily_demand}
             onChange={handleChange}
-            placeholder="e.g. 500"
+            placeholder="e.g. 50"
+          />
+        </div>
+
+        <div className="field-group">
+          <label>Lead Time</label>
+          <input
+            name="lead_time"
+            type="number"
+            value={fields.lead_time}
+            onChange={handleChange}
+            placeholder="e.g. 10"
           />
         </div>
 
@@ -121,6 +135,12 @@ export default function SafetyStockForm() {
             value={result.safety_stock}
             unit="units"
             highlight
+          />
+
+          <ResultRow
+            label="Base ROP"
+            value={result.base_rop}
+            unit="units"
           />
 
           <ResultRow
