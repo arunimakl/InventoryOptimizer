@@ -69,7 +69,7 @@ export default function SafetyStockForm() {
         
         <h2 className="module-title">Safety Stock Calculator</h2>
         <p className="module-formula">
-          SS = Z × σL | ROP = μL + SS
+          SS = Z × σL | ROP = dL + SS
         </p>
       </div>
 
