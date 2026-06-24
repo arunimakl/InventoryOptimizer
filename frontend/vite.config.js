@@ -1,16 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const backendTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      "/eoq": "http://localhost:8000",
-      "/rop": "http://localhost:8000",
-      "/safety-stock": "http://localhost:8000",
-      "/abc": "http://localhost:8000",
-      "/health": "http://localhost:8000",
+      "/eoq": backendTarget,
+      "/rop": backendTarget,
+      "/safety-stock": backendTarget,
+      "/abc": backendTarget,
+      "/health": backendTarget,
     },
   },
 });

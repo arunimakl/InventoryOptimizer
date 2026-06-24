@@ -3,6 +3,7 @@ InvOpt API — Version 1 (Extended)
 Entry point. Routes delegate all computation to formulas.py.
 """
 
+import os
 from typing import List
 
 from fastapi import FastAPI, HTTPException
@@ -23,13 +24,19 @@ app = FastAPI(
 )
 
 # ── CORS ───────────────────────────────────────────────────────────────
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+configured_origins = os.getenv("ALLOWED_ORIGINS", "")
+if configured_origins:
+    allowed_origins.extend(origin.strip() for origin in configured_origins.split(",") if origin.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://your-frontend-name.vercel.app"
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
