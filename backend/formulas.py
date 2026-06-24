@@ -91,7 +91,7 @@ def calculate_safety_stock(
     if not (0 < service_level < 1):
         raise ValueError("service_level must be between 0 and 1")
 
-    # ---- Z-table (no scipy, stable version) ----
+    # ---- Z-table ----
     z_table = {
         0.50: 0.00,
         0.55: 0.13,
