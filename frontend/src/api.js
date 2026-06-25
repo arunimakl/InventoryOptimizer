@@ -55,8 +55,3 @@ export function calculateSafetyStock(params) {
 export function runABCAnalysis(params) {
   return post("/abc", params);
 }
-/* ─────────────────────── FUTURE MODULES (STUBS) ─────────────────────── */
-
-// export function runABCAnalysis(params) {
-//   return post("/abc", params);
-// }
